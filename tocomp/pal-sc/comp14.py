@@ -131,7 +131,7 @@ len(smis)
 
 
 
-for inf in range(28000):
+for inf in range(28000,30000):
     mol_info = conf_gen(smi=smis[inf], conf_number=400, smi_charge=0)
 
     if len(str(inf)) == 1:

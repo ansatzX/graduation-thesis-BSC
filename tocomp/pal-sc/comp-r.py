@@ -129,9 +129,9 @@ len(smis)
 
 # In[26]:
 
+datt = [ 43, 93, 96 ,97 , 100, 101, 115, 116 ]
 
-
-for inf in range(8000,10000):
+for inf in datt:
     mol_info = conf_gen(smi=smis[inf], conf_number=400, smi_charge=0)
 
     if len(str(inf)) == 1:
