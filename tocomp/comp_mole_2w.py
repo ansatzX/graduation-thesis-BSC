@@ -44,7 +44,7 @@ def conf_gen(smi, conf_number, smi_charge):
 os.system("rm -rf  mole_2w")
 os.system("mkdir mole_2w")
 for inf in range(len(smis)):
-    mol_info = conf_gen(smi=smis[inf], conf_number=400, smi_charge=0)
+    mol_info = conf_gen(smi=str(smis[inf])[2:-2], conf_number=400, smi_charge=0)
 
     if len(str(inf)) == 1:
         num = '00000' + str(inf)
