@@ -8,5 +8,5 @@ from rdkit.Chem import AllChem
 rawdata=pd.read_csv("mole_dup.csv")
 data= rawdata.to_numpy()
 smis = data[:,0]
-smis2w = smis[0:19999]
+smis2w = smis[0:20000]
 smis2w.tofile("mol_dup_2w.csv",sep="\n", format="%s")
