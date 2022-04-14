@@ -21,19 +21,19 @@ def pick(start,end,folder) :
         os.system("cp ../mole_2w/%s %s"% (fileName, folder) )
 
 start = []
-for inf in range(50):
-    start.append(inf*40)
+for inf in range(100):
+    start.append(inf*200)
 
 end = []
-for inf in range(50):
-    end.append(inf*40+40)
+for inf in range(100):
+    end.append(inf*200+200)
 folder = []
-for inf in range(50):
+for inf in range(200):
     folder.append(str(inf)+ '-job')
 
 p = Pool(28)
 
-for i in range(50):
+for i in range(100):
     p.apply_async(pick,args=(start[i],end[i],folder[i]))
 print("waiting for all subprocesses done")
 p.close()

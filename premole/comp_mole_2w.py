@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from rdkit import Chem
 from rdkit.Chem import AllChem 
+
 # load data
 rawdata = pd.read_csv("mol_dup_2w.csv",names=["smiles"])
 data = rawdata.to_numpy()
@@ -19,7 +20,7 @@ def conf_gen(smi, conf_number, smi_charge):
     m = Chem.AddHs(m)
     #print(smi)
     params = AllChem.ETKDGv3()
-    cids = AllChem.EmbedMultipleConfs(m, numConfs = 100 , params = params)
+    cids = AllChem.EmbedMultipleConfs(m, numConfs = conf_number, params = params)
     res = AllChem.MMFFOptimizeMoleculeConfs(m,numThreads=40,mmffVariant="MMFF94")
 
     #a =[]
@@ -64,50 +65,4 @@ for inf in range(len(smis)):
     f.write(mol_info)
     f.close()
     os.system("mv %s mole_2w"% fileName)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
