@@ -14,3 +14,26 @@ Palton等人通过高精度量化计算构建了均裂键能数据库，并提�
 
 研究目标：化学键异裂键能数据库、自由基反应数据库超过1万条有效数据。
 
+1. pick 2w molecule fomr clean molecule csv file.
+```
+cd premole
+python pick2w_mole.py 
+```
+2. Generate suitable conformer for smiles strings. Store it to a standalone xyz file. 
+```
+python comp_mole_2w.py
+
+```
+3. Divide 2w xyzs to some folders 
+```
+cd runmol
+python pick.py
+
+```
+4. submit calc job to PBS system
+```
+cd ../../tocomp/mole/2w
+bash precomp.sh 
+python run2w.py 
+
+```
