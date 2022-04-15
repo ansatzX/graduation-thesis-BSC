@@ -5,7 +5,7 @@ cat > ${g16file} <<EOF
 %nprocs=26
 %mem=20GB
 %chk=${1//xyz/chk}
-#p opt pm7 freq
+#p opt freq pm7 
 
 [$1]
 
