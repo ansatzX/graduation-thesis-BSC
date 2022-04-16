@@ -2,7 +2,7 @@
 export xyzfile=$1
 export g16file=${1//xyz/gjf}
 cat > ${g16file} <<EOF
-%nprocs=28
+%nprocs=32
 %mem=20GB
 %chk=${1//xyz/chk}
 #p m062x 6-311g* nosymm em=gd3

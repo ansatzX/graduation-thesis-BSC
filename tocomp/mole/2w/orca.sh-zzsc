@@ -5,7 +5,7 @@
 #Webpage: http://sobereva.com/422
 
 #Set the number of parallel cores and maximum memory utilized by each core (MB)
-nprocs=26
+nprocs=30
 maxcore=2000
 #Set calculation level
 level=" r2SCAN-3c  "

@@ -1,0 +1,103 @@
+#!/bin/bash
+
+export WORK_DIR=${PWD}
+# job descritpion in amber9: filename before last period
+export JOB_NAME=$1
+# job name=dir tree + datetime + job description
+export SUB_SCRIPT=${JOB_NAME}.sh
+export outfile=${JOB_NAME}.info
+export errfile=${JOB_NAME}.err
+
+# BUILD THE QSUB_SCRIPT FILE
+cat << EOF > ${WORK_DIR}/${SUB_SCRIPT}
+#!/bin/bash
+#SBATCH --job-name=$JOB_NAME
+#SBATCH --mem-per-cpu=2gb
+#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=32
+#SBATCH --output=$JOB_NAME.log
+#SBATCH --partition=fat
+
+
+export g16root=/public/home/zzuscc15/soft/g16_o1_avx2
+export GAUSS_SCRDIR=/public/home/zzuscc15/tmp/gau_tmp
+source /public/home/zzuscc15/soft/g16_o1_avx2/g16/bsd/g16.profile
+export RSH_COMMAND="/usr/bin/ssh -x"
+
+ulimit -s unlimited
+
+#### xtb & crest ####
+module add grimme-suit/crest/2112     
+module add grimme-suit/xtb/641
+
+#### sob-molclus ####
+module add sob-suit/molclus-suit/1999
+
+#### orca ####
+module add orca/503-shared
+
+
+# where submit job
+export DATA_DIR=/public/home/zzuscc15/data/graduation-thesis-BSC/tocomp/mole/2w
+
+tmpdir=\$(mktemp -d /public/home/zzuscc15/tmp/s1/${JOB_NAME}_XXXXXX)
+cd \$tmpdir
+echo tmpdir=\$tmpdir
+cp -r \$DATA_DIR/xyzs/${JOB_NAME}  .
+
+
+
+mkdir logs
+cd logs
+mkdir ${JOB_NAME}
+cd \$tmpdir
+
+cp ./${JOB_NAME}/*.xyz .
+mkdir tmp
+for inf in \$(ls *.xyz|sort);do
+  cd  tmp
+  rm *
+  cp ../\$inf .
+  export OMP_NUM_THREADS=32
+  \$DATA_DIR/xtbmd.sh \$inf     runmd for this xyz
+  rm scoord.*  xtbmdok xtbopt.log charges wbo xtbtopo.mol xtbopt.xyz  mdrestart xtbrestart md.inp
+  mv xtb.trj traj.xyz
+  export OMP_NUM_THREADS=32
+  crest -mdopt traj.xyz -gfn2 -opt normal  
+  isostat crest_ensemble.xyz  -Nout 6 -Eout 2.4 -Edis 0.5 -Gdis 0.2 -T 298 -nt 28 
+  #split -\$(echo "\$(head -n 1 cluster.xyz )+2" |bc)  cluster.xyz  G16-
+  
+  mv  cluster.xyz traj.xyz
+  cp \$DATA_DIR/settings.ini  .
+  cp \$DATA_DIR/template.gjf .
+  cp \$DATA_DIR/orca.sh-zzsc orca.sh
+  cp \$DATA_DIR/extorca .
+  molclus   
+  isostat isomers.xyz  -Nout 1 -Eout 2.4 -Edis 0.5 -Gdis 0.2 -T 298  
+  mv cluster.xyz \$inf
+  \$DATA_DIR/geninput \$inf
+  g16 \${inf//xyz/gjf}
+  formchk \${inf//xyz/chk}
+  mv \$inf \$tmpdir/logs/$JOB_NAME
+  mv \${inf//xyz/log} \$tmpdir/logs/$JOB_NAME 
+  mv \${inf//xyz/fchk} \$tmpdir/logs/$JOB_NAME
+  cd \$tmpdir 
+done
+
+
+
+
+cp -r \$tmpdir/logs/${JOB_NAME}  \$DATA_DIR/logs
+
+rm -rf \$tmpdir
+EOF
+
+#
+# Now submit it to the PBS queue batch
+#
+sbatch   ${WORK_DIR}/${SUB_SCRIPT}
+
+
+rm ${WORK_DIR}/${SUB_SCRIPT}
