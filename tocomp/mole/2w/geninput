@@ -2,10 +2,10 @@
 export xyzfile=$1
 export g16file=${1//xyz/gjf}
 cat > ${g16file} <<EOF
-%nprocs=26
+%nprocs=28
 %mem=20GB
 %chk=${1//xyz/chk}
-#p opt freq pm7 
+#p m062x 6-311g* nosymm em=gd3
 
 [$1]
 
@@ -13,5 +13,7 @@ cat > ${g16file} <<EOF
 $(tail -n +3 $xyzfile)
 
 
+
 EOF
+
 

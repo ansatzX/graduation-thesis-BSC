@@ -1,0 +1,8 @@
+# opt=(nomicro,maxstep=1) 6-31g* nosymm external='./orca.sh'
+
+Template file
+
+0 1
+[GEOMETRY]
+
+

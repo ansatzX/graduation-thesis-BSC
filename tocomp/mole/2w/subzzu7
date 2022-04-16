@@ -19,6 +19,9 @@ cat << EOF > ${WORK_DIR}/${QSUB_SCRIPT}
 #Please give the name of the INPUT_FILE, such as test(.chm)
 INPUT_FILE=$JOB_NAME
 
+
+source /export/home/wjzhang/.bashrc
+ 
 #### g16 ####
 . /share/apps/intel/oneapi/compiler/2021.3.0/env/vars.sh
 . /share/apps/intel/oneapi/mkl/2021.3.0/env/vars.sh
@@ -28,8 +31,15 @@ export GAUSS_SCRDIR=/s1/\$USER/scr
 export RSH_COMMAND="/usr/bin/ssh -x"
 
 ulimit -s unlimited
+B_NAME}
+#### xtb & crest ####
+module add xtb-suit/641
 
+#### sob-molclus ####
+module add sob-suit/molclus/1999
 
+#### orca ####
+module add orca/5.0.3
 
 #### dir ####
 if [ ! -d /s1/\$USER ]; then
@@ -38,6 +48,10 @@ fi
 if [ ! -d /s1/\$USER/scr ]; then
   mkdir -p /s1/\$USER/scr
 fi
+
+
+
+
 tmpdir=\$(mktemp -d /s1/\$USER/${JOB_NAME}_XXXXXX)
 cd \$tmpdir
 echo tmpdir=\$tmpdir
@@ -59,13 +73,35 @@ cat \$PBS_NODE
 
 
 cp ./${JOB_NAME}/*.xyz .
-
-for inf in \$(ls *.xyz);do
+mkdir tmp
+for inf in \$(ls *.xyz|sort);do
+  cd  tmp
+  rm *
+  cp ../\$inf .
+  export OMP_NUM_THREADS=12
+  \$PBS_O_WORKDIR/xtbmd.sh \$inf   > zzu7.log # runmd for this xyz
+  rm scoord.*  xtbmdok xtbopt.log charges wbo xtbtopo.mol xtbopt.xyz  mdrestart xtbrestart md.inp
+  mv xtb.trj traj.xyz
+  export OMP_NUM_THREADS=28
+  crest -mdopt traj.xyz -gfn2 -opt normal  >> zzu7.log
+  isostat crest_ensemble.xyz  -Nout 6 -Eout 2.4 -Edis 0.5 -Gdis 0.2 -T 298 -nt 28 >> zzu7.log # 
+  #split -\$(echo "\$(head -n 1 cluster.xyz )+2" |bc)  cluster.xyz  G16-
+  
+  mv  cluster.xyz traj.xyz
+  cp \$PBS_O_WORKDIR/settings.ini  .
+  cp \$PBS_O_WORKDIR/template.gjf .
+  cp \$PBS_O_WORKDIR/orca.sh .
+  cp \$PBS_O_WORKDIR/extorca .
+  molclus  >> zzu7.log
+  isostat isomers.xyz  -Nout 1 -Eout 2.4 -Edis 0.5 -Gdis 0.2 -T 298  >> zzu7.log
+  mv cluster.xyz \$inf
   \$PBS_O_WORKDIR/geninput \$inf
   g16 \${inf//xyz/gjf}
   formchk \${inf//xyz/chk}
-  mv \${inf//xyz/log} logs/$JOB_NAME
-  mv \${inf//xyz/fchk} logs/$JOB_NAME
+  mv \$inf \$tmpdir/logs/$JOB_NAME
+  mv \${inf//xyz/log} \$tmpdir/logs/$JOB_NAME 
+  mv \${inf//xyz/fchk} \$tmpdir/logs/$JOB_NAME
+  cd \$tmpdir 
 done
 
 
@@ -81,3 +117,5 @@ EOF
 #
 qsub -m n ${WORK_DIR}/${QSUB_SCRIPT}
 
+
+rm ${WORK_DIR}/${QSUB_SCRIPT}
