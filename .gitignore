@@ -2,3 +2,5 @@
 *.log
 nohup.out
 extorca
+*.fchk
+*.ins
