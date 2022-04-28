@@ -34,6 +34,7 @@ def pre_mole(smi):
     m =Chem.AddHs(m)
     print("pre mole")
     return m
+    
 def pre_frag(single_index):
     '''
     get frags by index 
@@ -133,7 +134,7 @@ def get_frag_atomindex_pro(smi):
                 print(i,j,use)
                 atom =mol_H.GetAtomWithIdx(j)
                 # pick atom
-                bonds = atom.GetDegree()
+                bonds = atom.GetExplicitValence()
                 symbol = atom.GetSymbol()
                 # infomation of this atom
 
