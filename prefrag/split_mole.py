@@ -68,6 +68,24 @@ def get_linkage_hydrogen_idx(mol,atomidx):
         other_atom_lists.append(other_atom_idx)
         #print("get your h on this atom %s"% atomidx)
     return other_atom_lists
+def get_linkage_hydrogen_num(mol,atomidx):
+    '''
+    get all Hs on specific atom of molecule
+    '''
+    hs_num =0
+    # try each bond and fetch H
+    for i in range(len(mol.GetAtomWithIdx(atomidx).GetBonds())):
+        other_atom = mol.GetAtomWithIdx(atomidx).GetBonds()[i].GetEndAtom()
+        other_atom_symbol = other_atom.GetSymbol()
+        if other_atom_symbol != 'H':
+            other_atom = mol.GetAtomWithIdx(atomidx).GetBonds()[i].GetBeginAtom()    
+            other_atom_symbol = other_atom.GetSymbol()
+        if other_atom_symbol != 'H':   
+            continue
+        hs_num = hs_num + 1
+        #print("get your h on this atom %s"% atomidx)
+    return hs_num
+
 
 def get_frag_atomindex_pro(smi):
     '''
@@ -153,7 +171,25 @@ def get_frag_atomindex_pro(smi):
                     saturated_atoms.remove(unsaturated_atom)
                     break
             #index of frags --mapping entire molecule's index 
+            ua_mol = get_linkage_hydrogen_num(mol, unsaturated_atom)
+            ua_mol_H = get_linkage_hydrogen_num(mol_H, unsaturated_atom)
+            print("unsaturated_atom",unsaturated_atom)
+            if ua_mol == ua_mol_H:
+                atom_sametype = []
+                for atomidx in saturated_atoms:
+                    atom =mol_H.GetAtomWithIdx(atomidx)
+                    if atom.GetSymbol() == symbol:
+                        atom_sametype.append(atomidx)
+                    # get same type atoms
 
+                for idx in atom_sametype:
+                    tmp = get_linkage_hydrogen_num(mol, idx)
+                    if (tmp -1)== ua_mol_H:
+                        atom_lower1H=idx
+                        print(idx)
+                saturated_atoms.append(unsaturated_atom)
+                unsaturated_atom =atom_lower1H
+                saturated_atoms.remove(unsaturated_atom)
         
             for k in saturated_atoms:
                 addHs = get_linkage_hydrogen_idx(mol,k)
