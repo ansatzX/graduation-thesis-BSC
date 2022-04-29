@@ -134,7 +134,7 @@ def get_frag_atomindex_pro(smi):
                 print(i,j,use)
                 atom =mol_H.GetAtomWithIdx(j)
                 # pick atom
-                bonds = atom.GetExplicitValence()
+                bonds = atom.GetTotalValence()
                 symbol = atom.GetSymbol()
                 # infomation of this atom
 
