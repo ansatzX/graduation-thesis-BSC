@@ -1,0 +1,106 @@
+#!/bin/bash
+
+export WORK_DIR=${PWD}
+# job descritpion in amber9: filename before last period
+export JOB_NAME=$1
+# job name=dir tree + datetime + job description
+export QSUB_SCRIPT=${JOB_NAME}.sh
+export outfile=${JOB_NAME}.info
+export errfile=${JOB_NAME}.err
+
+# BUILD THE QSUB_SCRIPT FILE
+cat << EOF > ${WORK_DIR}/${QSUB_SCRIPT}
+#!/bin/bash
+#PBS -l nodes=1:ppn=28
+#PBS -l walltime=8760:00:00
+#PBS -N $JOB_NAME
+#PBS -j oe
+
+#Please give the name of the INPUT_FILE, such as test(.chm)
+INPUT_FILE=$JOB_NAME
+
+
+source /export/home/wjzhang/.bashrc
+ 
+#### g16 ####
+. /share/apps/intel/oneapi/compiler/2021.3.0/env/vars.sh
+. /share/apps/intel/oneapi/mkl/2021.3.0/env/vars.sh
+export g16root=/export/home/jssong/PROGRAMS/g16_o1_avx2
+. \$g16root/g16/bsd/g16.profile
+export GAUSS_SCRDIR=/s1/\$USER/scr
+export RSH_COMMAND="/usr/bin/ssh -x"
+
+ulimit -s unlimited
+B_NAME}
+#### xtb & crest ####
+module add xtb-suit/641
+
+#### sob-molclus ####
+module add sob-suit/molclus/1999
+
+#### orca ####
+module add orca/5.0.3
+
+#### dir ####
+if [ ! -d /s1/\$USER ]; then
+  mkdir -p /s1/\$USER
+fi
+if [ ! -d /s1/\$USER/scr ]; then
+  mkdir -p /s1/\$USER/scr
+fi
+
+
+
+
+tmpdir=\$(mktemp -d /s1/\$USER/${JOB_NAME}_XXXXXX)
+cd \$tmpdir
+echo tmpdir=\$tmpdir
+
+
+#get what to comp
+cd  \$PBS_O_WORKDIR/xyzs/${JOB_NAME}  
+for inf in \$(ls *.xyz|sort|awk -F . '{print $1}');do
+  cp -r \$inf  \$tmpdir
+done
+
+cd \$tmpdir
+mkdir logs
+cd logs
+mkdir ${JOB_NAME}
+cd \$tmpdir
+
+
+echo "Job started from \${PBS_O_HOST}, running on `hostname`" >> $outfile 
+echo "Job execution start: `date`" >> $outfile
+echo "PBS Job ID is: \${PBS_JOBID}" >> $outfile
+cat \$PBS_NODE
+
+mkdir tmp
+for job in \$(ls mole* |sort);do
+  cd \$tmpdir
+  cd \${job}
+  cp *.xyz \$tmpdir/tmp
+  cd \$tmpdir/tmp
+  for xyz in \$(ls *.xyz|sort);do
+    \$PBS_O_WORKDIR/geninput1 \${xyz}
+    g16 \${inf//xyz/gjf}
+    formchk \${inf//xyz/chk}
+    mv \${inf//xyz/log} \$tmpdir/\${job}
+    mv \${inf//xyz/fchk} \$tmpdir/\${job}
+  done
+  cp -r  \$tmpdir/\${job}  \$PBS_O_WORKDIR/frag-logs-1/$JOB_NAME
+
+done
+
+
+
+rm -rf \$tmpdir
+EOF
+
+#
+# Now submit it to the PBS queue batch
+#
+qsub -m n ${WORK_DIR}/${QSUB_SCRIPT}
+
+
+rm ${WORK_DIR}/${QSUB_SCRIPT}

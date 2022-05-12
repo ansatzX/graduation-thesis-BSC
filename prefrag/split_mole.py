@@ -91,6 +91,54 @@ def get_atom_symbol(mol,idx):
     symbol = atom.GetSymbol()
     return symbol
 
+def pick_unsaturated_atom(mol_H,atomids,saturated_atoms):
+    for j in range(mol_H.GetNumAtoms()):
+                # try each atom but H
+
+
+                atom =mol_H.GetAtomWithIdx(j)
+                # pick atom
+                bonds = atom.GetTotalValence()
+                symbol = atom.GetSymbol()
+                # infomation of this atom
+
+                if symbol == 'C' and bonds == 3:
+                    unsaturated_atom = atomids[j]
+                    # if  then  mark it 
+                    print("j,use",j)
+                    print("BBS",bonds,symbol,j)
+                    print("it is C",j)
+                    saturated_atoms.remove(unsaturated_atom)
+                    break
+                if symbol == 'N' and bonds == 2:
+                    unsaturated_atom = atomids[j]
+                    print("j,use",j)
+                    print("BBS",bonds,symbol,j)
+                    print("it is N")
+                    saturated_atoms.remove(unsaturated_atom)
+                    break
+                if symbol == 'O' and bonds == 1:
+                    unsaturated_atom = atomids[j]
+                    print("i,j",j)
+                    print("BBS",bonds,symbol,j)
+                    print("it is O")
+                    saturated_atoms.remove(unsaturated_atom)
+                    break
+    return unsaturated_atom
+
+def rematch_frag(mol,mol_H,unsaturated_atom):
+    H=Chem.MolFromSmiles("[H]")
+    atom_H=H.GetAtomWithIdx(0)
+    mol_H=Chem.AddHs(mol_H)
+    rwmol = Chem.RWMol(mol_H)
+    H_idx=rwmol.AddAtom(atom_H)
+    rwmol.AddBond(beginAtomIdx=unsaturated_atom,endAtomIdx=H_idx)
+    smi_tmp=Chem.MolToSmiles(rwmol)
+    m_tmp= Chem.MolFromSmiles(smi_tmp)
+    atomids=mol.GetSubstructMatch(m_tmp)
+    is_match =mol.HasSubstructMatch(m_tmp)
+    return is_match,atomids
+
 def get_frag_atomindex_pro(smi):
     '''
     from a specific smiles to a seqence of frags atomindex
@@ -118,24 +166,44 @@ def get_frag_atomindex_pro(smi):
             else :
                 use = 2
                 is_match =mol.HasSubstructMatch(mol_2)
+
             if is_match :
                 if use == 1 :
                     atomids = mol.GetSubstructMatch(mol_1)
                 else :
                     atomids = mol.GetSubstructMatch(mol_2)
-            
+                for atom in atomids:
+                    atomlists.append(atom)
+                for j in atomids:
+                    addHs = get_linkage_hydrogen_idx(mol,j)
+                    for H in addHs:
+                        atomlists.append(H)
             else :
                 print("nothing match")
-                with open("not_natching.log","a+") as f:
-                    f.write("%s,%s,\n"% (inf,i))
-            for atom in atomids:
-                atomlists.append(atom)
+
+                if use == 1 :
+                    mol_H =Chem.MolFromSmiles(frag1)
+                else :
+                    mol_H =Chem.MolFromSmiles(frag2)
+                print("mol_H",mol_H)
+                atomids =[]
+                saturated_atoms =[]
+                for atom in range(mol_H.GetNumAtoms()):
+                    atomids.append(atom)
+                    saturated_atoms.append(atom)
+
+                unsaturated_atom = pick_unsaturated_atom(mol_H,atomids,saturated_atoms)
 
 
-            for j in atomids:
-                addHs = get_linkage_hydrogen_idx(mol,j)
-                for H in addHs:
-                    atomlists.append(H)
+                is_match,atomids=rematch_frag(mol,mol_H,unsaturated_atom)
+
+                if is_match :
+                    for atom in atomids:
+                        atomlists.append(atom)
+                    for j in atomids:
+                        addHs = get_linkage_hydrogen_idx(mol,j)
+                        for H in addHs:
+                            atomlists.append(H)
         else :
             print("fuck h")
             if frag1 == '[H]':
@@ -161,9 +229,6 @@ def get_frag_atomindex_pro(smi):
                 # 添加骨架原子in mole进去
             else :
                 print("nothing match")
-                with open("not_natching.log","a+") as f:
-                   f.write("%s,%s,\n"% (inf,i))
-               
                 
                 for atom in range(mol_H.GetNumAtoms()):
                     atomlists.append(atom)
@@ -253,8 +318,8 @@ def get_frag_atomindex_pro(smi):
 
             for k in saturated_atoms:
                 addHs = get_linkage_hydrogen_idx(mol,k)
-            for H in addHs:
-                atomlists.append(H)
+                for H in addHs:
+                    atomlists.append(H)
             unsaturated_Hs = get_linkage_hydrogen_idx(mol,int(unsaturated_atom))
             if len(unsaturated_Hs) != 0:
                 unsaturated_Hs.pop()
