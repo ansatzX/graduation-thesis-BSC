@@ -14,7 +14,7 @@ Palton等人通过高精度量化计算构建了均裂键能数据库，并提�
 
 研究目标：化学键异裂键能数据库、自由基反应数据库超过1万条有效数据。
 
-1. pick 2w molecule fomr clean molecule csv file.
+1. Pick 2w molecule from clean molecule csv file.
 ```
 cd premole
 python pick2w_mole.py 
@@ -27,13 +27,79 @@ python comp_mole_2w.py
 3. Divide 2w xyzs to some folders 
 ```
 cd runmol
-python pick.py
+python pick.py # then pack files to workspace
 
 ```
-4. submit calc job to PBS system
+4. Submit calc job to PBS system
 ```
-cd ../../tocomp/mole/2w
+cd ../../tocomp/mole/
 bash precomp.sh 
-python run2w.py 
+python run1w.py 
 
 ```
+5. Check results and work on errors
+```
+python runcheck.py
+ls Error-*  # fix all errors and collect all xyzs tp xyzs folder
+
+```
+6. Generate suitable conformer from optimized conformer. Store it to a standalone xyz file.
+```
+cd ../../prefrag
+mkdir INS frag-xyz tmp optxyzs # notice you need put all conformer-optimized xyz files to a folder called "optxyzs"
+python split_mole.py # generate instruction files
+python genmake.py # run bash script to spilt molecule
+make -jN   # N for your core number
+
+```
+7. Submit calc job to PBS system
+```
+cd ../tocomp/frag/
+mkdir frag-logs-1 frag-logs-2  xyzs tmp # will receive results store spilt xyz files
+python run1w-opt.py
+
+
+```
+8. Check results and work on errors
+```
+cp check-error.sh ./frag-logs-1
+cp check-error.sh ./frag-logs-2
+cp runcheck.py ./frag-logs-1
+cp runcheck.py ./frag-logs-2
+cd frag-logs-1
+mkdir worksapce
+python runcheck.py
+ls Error-*
+cd ../frag-logs-2
+mkdir worksapce
+python runcheck.py
+ls Error-*
+
+```
+9. Check Topology by xTB WBO 
+```
+python run_extract_optimized_xyz.py # extract opted xyz files in same folders
+python run1w_valence_info.py
+python run1w_judge_pick.py
+
+```
+10. Do SP Jobs
+```
+python run1w-sp.py # do SP calc  
+
+```
+11. Collect Results
+```
+cp diff_result_1.txt ../../results
+cp diff_result_2.txt ../../results
+cd ../../
+mv tocomp/mole/logs ./results/mole-logs
+mv tocomp/frag/frag-logs-1 ./results
+mv tocomp/frag/frag-logs-2 ./results 
+
+```
+12. Using scripts to get data from raw files and generate hdf5 file.
+```
+to do
+```
+

@@ -1,0 +1,15 @@
+#!/bin/bash
+export fchfile=$1
+export g16file=${fchfile//.fchk/-sp.gjf}
+export local=$(pwd)
+cat > ${g16file} <<EOF
+%nprocs=32
+%mem=20GB
+%oldchk=${local}/${fchfile}
+%chk=${fchfile//.fchk/-sp.fchk}
+#p m062x 6-311g* nosymm em=gd3 opt=maxstep=1 guess=read geom=allcheck
+
+
+EOF
+
+

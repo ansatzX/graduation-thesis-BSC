@@ -3,6 +3,7 @@
 export WORK_DIR=${PWD}
 # job descritpion in amber9: filename before last period
 export JOB_NAME=$1
+export WHICH_PART=$2 #should be 1 or 2
 # job name=dir tree + datetime + job description
 export QSUB_SCRIPT=${JOB_NAME}.sh
 export outfile=${JOB_NAME}.info
@@ -58,8 +59,8 @@ echo tmpdir=\$tmpdir
 
 
 #get what to comp
-cd  \$PBS_O_WORKDIR/xyzs/${JOB_NAME}  
-for inf in \$(ls *.xyz|sort|awk -F . '{print $1}');do
+cd  \$PBS_O_WORKDIR/frag-logs-${WHICH_PART}/${JOB_NAME}  
+for inf in \$(ls *.fchk|sort|awk -F . '{print $1}');do
   cp -r \$inf  \$tmpdir
 done
 
@@ -79,16 +80,16 @@ mkdir tmp
 for job in \$(ls mole* |sort);do
   cd \$tmpdir
   cd \${job}
-  cp *.xyz \$tmpdir/tmp
+  cp *.fchk \$tmpdir/tmp
   cd \$tmpdir/tmp
-  for xyz in \$(ls *.xyz|sort);do
-    \$PBS_O_WORKDIR/geninput1 \${xyz}
-    g16 \${inf//xyz/gjf}
-    formchk \${inf//xyz/chk}
-    mv \${inf//xyz/log} \$tmpdir/\${job}
-    mv \${inf//xyz/fchk} \$tmpdir/\${job}
+  for fchk in \$(ls *.fchk|sort);do
+    \$PBS_O_WORKDIR/geninput-sp \${fchk}
+    g16 \${inf//.fchk/-sp.gjf}
+    formchk \${inf//.fchk/-sp.chk}
+    mv \${inf//.fchk/-sp.log} \$tmpdir/\${job}
+    mv \${inf//.fchk/-sp.fchk} \$tmpdir/\${job}
   done
-  cp -r  \$tmpdir/\${job}  \$PBS_O_WORKDIR/frag-logs-1/$JOB_NAME
+  cp   \$tmpdir/\${job}/*  \$PBS_O_WORKDIR/frag-logs-${WHICH_PART}/$JOB_NAME/\${job}/
 
 done
 
