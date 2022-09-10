@@ -56,6 +56,9 @@ make -jN   # N for your core number
 ```
 cd ../tocomp/frag/
 mkdir frag-logs-1 frag-logs-2  xyzs tmp # will receive results store spilt xyz files
+cd xyzs
+python pick.py
+cd ..
 python run1w-opt.py
 
 
